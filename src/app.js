@@ -27,3 +27,60 @@ app.post("/signup", async (req, res) => {
         res.status(400).send("Error while creating user. Error message => " + err.message);
     }
 })
+
+app.get("/feed", async (req, res) => {
+    const dataObj = req.body;
+    try {
+        const users = await User.find(dataObj);
+        if (users.length === 0) res.status(404).send("Users not found.");
+        else {
+            console.log("Users found successfully.");
+            res.send(users);
+        }
+    }
+    catch (err) {
+        res.status(404).send("User not found.");
+    }
+})
+
+app.get("/user", async (req, res) => {
+    try {
+        const user = await User.findOne({ "emailId": req.body.emailId });
+        if (user.length === 0) res.status(404).send("User not found.");
+        else {
+            console.log("User found successfully.");
+            res.send(user);
+        }
+    }
+    catch (err) {
+        res.status(404).send("User not found.");
+    }
+})
+
+app.delete("/user", async (req, res) => {
+    const id = req.params.id;
+    try {
+        const user = await User.findByIdAndDelete(id);
+        if (user === null) res.status(404).send("User not found.");
+        else {
+            console.log("User deleted successfully.");
+            res.send(user);
+        }
+    }
+    catch (err) {
+        res.status(404).send("Can't delete user.");
+    }
+})
+
+app.patch("/user", async (req, res) => {
+    const dataObj = req.body;
+    try {
+        const user = await User.findByIdAndUpdate(dataObj.id, dataObj);
+        if (user.length === 0) res.status(404).send("User not found.");
+        console.log("User updated successfully.");
+        res.send(user);
+    }
+    catch (err) {
+        res.status(404).send("Can't update user.");
+    }
+})
