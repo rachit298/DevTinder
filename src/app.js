@@ -13,15 +13,12 @@ connectDB().then(() => {
     console.log("Database cannot be connected.");
 })
 
+app.use(express.json());
+
 app.post("/signup", async (req, res) => {
-    const userObj = {
-        firstName: "Rachit",
-        lastName: "S.",
-        emailId: "rachit@sri.com",
-        password: "rachit123"
-    }
+    console.log(req.body);
     // Creating a new instance of the User model
-    const user = new User(userObj);
+    const user = new User(req.body);
     try {
         await user.save();
         res.send("User created successfully.");
