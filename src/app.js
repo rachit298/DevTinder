@@ -16,7 +16,6 @@ connectDB().then(() => {
 app.use(express.json());
 
 app.post("/signup", async (req, res) => {
-    console.log(req.body);
     // Creating a new instance of the User model
     const user = new User(req.body);
     try {
@@ -46,14 +45,14 @@ app.get("/feed", async (req, res) => {
 app.get("/user", async (req, res) => {
     try {
         const user = await User.findOne({ "emailId": req.body.emailId });
-        if (user.length === 0) res.status(404).send("User not found.");
+        if (user === null) res.status(404).send("User not found.");
         else {
             console.log("User found successfully.");
             res.send(user);
         }
     }
     catch (err) {
-        res.status(404).send("User not found.");
+        res.status(404).send("Error while searching the user.");
     }
 })
 
@@ -72,10 +71,28 @@ app.delete("/user", async (req, res) => {
     }
 })
 
-app.patch("/user", async (req, res) => {
+app.patch("/user/:userId", async (req, res) => {
+    const userId = req.params.userId;
     const dataObj = req.body;
     try {
-        const user = await User.findByIdAndUpdate(dataObj.id, dataObj);
+        const ALLOWED_UPDATE = [
+            "firstName",
+            "lastName",
+            "about",
+            "password",
+            "age"
+        ];
+
+        const isUpdateAllowed = Object.keys(dataObj).every((ele) =>
+            ALLOWED_UPDATE.includes(ele)
+        )
+        console.log(isUpdateAllowed,
+            dataObj
+        );
+        if (!isUpdateAllowed) {
+            throw new Error("Update not allowed.");
+        }
+        const user = await User.findByIdAndUpdate(userId, dataObj, { returnDocument: 'after', runValidators: true });
         if (user.length === 0) res.status(404).send("User not found.");
         console.log("User updated successfully.");
         res.send(user);
