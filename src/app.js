@@ -2,6 +2,9 @@ const express = require("express");
 const { connectDB } = require('./config/database');
 const app = express();
 const User = require("./models/user");
+const validateSignUpData = require("./helper/validation");
+const bcrypt = require("bcrypt");
+const validator = require("validator");
 
 // first connect to DB. If connected successfully, then only listen to port
 connectDB().then(() => {
@@ -16,14 +19,48 @@ connectDB().then(() => {
 app.use(express.json());
 
 app.post("/signup", async (req, res) => {
-    // Creating a new instance of the User model
-    const user = new User(req.body);
     try {
+        // Validation of data
+        validateSignUpData(req);
+
+        // Encrypt the password
+        let { firstName, lastName, emailId, password } = req.body;
+        const passwordHash = await bcrypt.hash(password, 10);
+        console.log(passwordHash);
+
+        // Creating a new instance of the User model
+        const user = new User({
+            firstName,
+            lastName,
+            emailId,
+            password: passwordHash
+        });
         await user.save();
         res.send("User created successfully.");
     }
     catch (err) {
-        res.status(400).send("Error while creating user. Error message => " + err.message);
+        res.status(400).send("Error while creating user. \n Error message => " + err.message);
+    }
+})
+
+app.post("/login", async (req, res) => {
+    try {
+        const { emailId, password } = req.body;
+        if (!validator.isEmail(emailId)) {
+            throw new Error("Invalid email!");
+        }
+        const user = await User.findOne({ emailId });
+        if (!user) {
+            throw new Error("Invalid credentials.");
+        }
+        const isPasswordMatched = await bcrypt.compare(password, user.password);
+        if (!isPasswordMatched) {
+            throw new Error("Invalid credentials.");
+        };
+        res.send("Login successful!")
+    }
+    catch (err) {
+        res.status(400).send("Error while logging in the user. \n Error message => " + err.message);
     }
 })
 
