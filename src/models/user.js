@@ -1,6 +1,8 @@
 const { mongoose } = require("mongoose");
 const { Schema } = mongoose;
 const validator = require('validator');
+const jwt = require('jsonwebtoken');
+const bcrypt = require("bcrypt");
 
 // Each schema maps to a MongoDB collection and defines the shape of the documents within that collection.
 const userSchema = new Schema({
@@ -51,6 +53,27 @@ const userSchema = new Schema({
     }
 },
     { timestamps: true });
+
+
+// custom validation methods (don't use arrow function)
+userSchema.methods.getJWT = async function () {
+    const user = this;
+
+    // created a token using JWT package
+    const token = await jwt.sign({ _id: user._id }, "N0d#.J$", { expiresIn: '8h' });
+
+    return token;
+}
+
+userSchema.methods.validatePassword = async function (userInputPassword) {
+    const user = this;
+    const passwordHash = user.password;
+    
+    // Encrypt the password
+    const isPasswordMatched = await bcrypt.compare(userInputPassword, passwordHash);
+
+    return isPasswordMatched;
+}
 
 // An instance of a model is called a document. 
 // Models are responsible for creating and reading documents from the underlying MongoDB database.
