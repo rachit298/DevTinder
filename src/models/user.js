@@ -36,12 +36,12 @@ const userSchema = new Schema({
         type: Number,
         min: 18,
         default: 18,
-        maxLength: 3
+        max: 130
     },
     gender: {
         type: String,
         validate: (value) => {
-            if (!['male', 'female', 'others'].includes(value)) {
+            if (!['male', 'female', 'other'].includes(value)) {
                 throw new Error("Gender data not valid.");
             }
         }
@@ -53,7 +53,6 @@ const userSchema = new Schema({
     }
 },
     { timestamps: true });
-
 
 // custom validation methods (don't use arrow function)
 userSchema.methods.getJWT = async function () {
@@ -69,7 +68,7 @@ userSchema.methods.validatePassword = async function (userInputPassword) {
     const user = this;
     const passwordHash = user.password;
     
-    // Encrypt the password
+    // compare user input password with hash password stored in DB
     const isPasswordMatched = await bcrypt.compare(userInputPassword, passwordHash);
 
     return isPasswordMatched;
