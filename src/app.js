@@ -22,5 +22,5 @@ connectDB().then(() => {
         console.log("Server is listening on port 1234.");
     });
 }).catch((err) => {
-    console.log("Database cannot be connected.");
+    console.log("Error while establishing connection with database.");
 })
