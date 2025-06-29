@@ -2,6 +2,7 @@ const express = require("express");
 const userAuth = require("../middlewares/auth");
 const userRouter = express.Router();
 const ConnectionRequest = require("../models/connectionRequest");
+const User = require("../models/user");
 
 const USER_SAFE_DATA = ["firstName", "lastName"];
 
@@ -48,7 +49,63 @@ userRouter.get("/user/connections", userAuth, async (req, res) => {
         })
     }
     catch (err) {
-        res.status(400).send({ message: err.message });
+        res.status(400).send("Error: " + err.message);
+    }
+})
+
+userRouter.get("/user/feed", userAuth, async (req, res) => {
+    try {
+        const loggedInUser = req.user;
+        let limit = parseInt(req.query?.limit) || 4;
+        const page = parseInt(req.query?.page) || 1;
+        limit = limit > 30 ? 30 : limit;
+        console.log(limit);
+        const skipDocs = (page - 1) * limit;
+        const data = await ConnectionRequest.find({
+            $or: [
+                { fromUserId: loggedInUser._id },
+                { toUserId: loggedInUser._id }
+            ]
+        }).select(["fromUserId", "toUserId"]);
+
+        const blockedUsersFromFeed = new Set();
+
+        data.forEach(user => {
+            blockedUsersFromFeed.add(user.fromUserId.toString());
+            blockedUsersFromFeed.add(user.toUserId.toString());
+        })
+
+        const users = await User.find({
+            $and: [
+                {
+                    _id: {
+                        $not: {
+                            $in: Array.from(blockedUsersFromFeed)
+                        }
+                    }
+                },
+                {
+                    _id: {
+                        $ne: loggedInUser._id
+                    }
+                }
+            ]
+        }).select([
+            "firstName",
+            "lastName"
+        ]).sort({ "firstName": 1 }).skip(skipDocs).limit(limit);
+
+        if (!users) {
+            throw new Error("Either you have reacted to all the users on this platform or no user is present right now for you to react.")
+        }
+
+        res.json({
+            message: "Users fetched successfully!",
+            data: users
+        });
+    }
+    catch (err) {
+        res.status(400).send("Error: " + err.message);
     }
 })
 
