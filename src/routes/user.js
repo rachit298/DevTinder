@@ -59,7 +59,6 @@ userRouter.get("/user/feed", userAuth, async (req, res) => {
         let limit = parseInt(req.query?.limit) || 4;
         const page = parseInt(req.query?.page) || 1;
         limit = limit > 30 ? 30 : limit;
-        console.log(limit);
         const skipDocs = (page - 1) * limit;
         const data = await ConnectionRequest.find({
             $or: [
